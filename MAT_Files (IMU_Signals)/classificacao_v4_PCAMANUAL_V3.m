@@ -1,36 +1,56 @@
 clc
 %{
 features:
-	standard deviation in time domain
-	mean in time domain
-	amplitude in time domain
-	PSD peak
-	dominant frequency
-	second PSD peak 
-	second dominant frequency
-	cross-correlation
-
+    desvio padrão no tempo
+    média no tempo
+    amplitude no tempo
+    pico da densidade em frequencia
+    frequencia dominante
+    segundo pico da densidade em frequencia    
+    segunda frequencia dominante
+    correlação cruzada
 %}
 
-% Since the gyroscope signals had a greater amplitude in all cases, only the gyroscope signals were used fot the classification
+% all_feat = [astd_X; astd_Y; astd_Z; amean_X; amean_Y; amean_Z; aAmp_X; aAmp_Y; aAmp_Z; aAmp_SpX; aAmp_SpY; 
+%     aAmp_SpZ; af_dom1X; af_dom1Y; af_dom1Z; aSp_2ndX; aSp_2ndY; aSp_2ndZ; af_dom2X; af_dom2Y; af_dom2Z;
+%     aAmp_CRXY; aAmp_CRXZ; aAmp_CRYZ; aInd_CRXY; aInd_CRXZ; aInd_CRYZ]';
 
-% creating a dataset for the features (observations X features)
 all_feat = [gstd_X; gstd_Y; gstd_Z; gmean_X; gmean_Y; gmean_Z; gAmp_X; gAmp_Y; gAmp_Z; gAmp_SpX; gAmp_SpY; 
     gAmp_SpZ; gf_dom1X; gf_dom1Y; gf_dom1Z; gSp_2ndX; gSp_2ndY; gSp_2ndZ; gf_dom2X; gf_dom2Y; gf_dom2Z;
     gAmp_CRXY; gAmp_CRXZ; gAmp_CRYZ; g_tcorr_XY; g_tcorr_XZ; g_tcorr_YZ]';
 
-% reading the correspondent class of the observations
+%{
+all_feat_total = [gstd_X; gstd_Y; gstd_Z; gmean_X; gmean_Y; gmean_Z; gAmp_X; gAmp_Y; gAmp_Z; gAmp_SpX; gAmp_SpY; 
+    gAmp_SpZ; gf_dom1X; gf_dom1Y; gf_dom1Z; gSp_2ndX; gSp_2ndY; gSp_2ndZ; gf_dom2X; gf_dom2Y; gf_dom2Z;
+    gAmp_CRXY; gAmp_CRXZ; gAmp_CRYZ; g_tcorr_XY; g_tcorr_XZ; g_tcorr_YZ; astd_X;astd_Y; astd_Z; amean_X; amean_Y; amean_Z; 
+    aAmp_X; aAmp_Y; aAmp_Z; aAmp_SpX; aAmp_SpY; aAmp_SpZ; af_dom1X; af_dom1Y; af_dom1Z; aSp_2ndX; aSp_2ndY; aSp_2ndZ;
+    af_dom2X; af_dom2Y; af_dom2Z; aAmp_CRXY; aAmp_CRXZ; aAmp_CRYZ; a_tcorr_XY; a_tcorr_XZ; a_tcorr_YZ]';
+%}
+    
+all_feat_X = [astd_X; amean_X; aAmp_X; aAmp_SpX; af_dom1X; aSp_2ndX; af_dom2X]';
+
+%class = [0 0 0 0 1 1 1 1 2 2 1 1 1 1 1 1 0 0 0 0 0 0 0 2 2 0 0 2 2 0 2 2 0 0 0 0 0 0 1 1 0 0 0 0 0 0 0 0 0 0 0 0 1 1 1 1 2 2 0 0 0 0 0 0 1 1 0 0 2 2 2 2 0 0 0 2 2 0 0 0 0 1 1 0 0 0 0 0 0 0 0 1 1 0 0];
 c_012 = csvread('class_patients.csv');
+%all_feat_012 = csvread('all_feat_012.csv')
 
-% dataset joining the features and classes 
-Dataset = [all_feat c_012];
+Dados_HUCFF = [all_feat, c_012];
+%Dados_HUCFF_Total = [all_feat_total, c_012];
+csvwrite('Dados_HUCFF.csv',Dados_HUCFF)
+%csvwrite('Dados_HUCFF_Completo.csv',Dados_HUCFF_Total)
 
-% data balancing 
+%csvwrite('AF.csv',all_feat)
+%figure
+%plotmatrix(all_feat(1:11,:))
+all_feat_table =  array2table(all_feat, 'VariableNames', {'gstd_X', 'gstd_Y', 'gstd_Z', 'gmean_X', 'gmean_Y', 'gmean_Z', 'gAmp_X', 'gAmp_Y', 'gAmp_Z', 'gAmp_SpX', 'gAmp_SpY','gAmp_SpZ', 'gf_dom1X', 'gf_dom1Y', 'gf_dom1Z', 'gSp_2ndX', 'gSp_2ndY', 'gSp_2ndZ', 'gf_dom2X', 'gf_dom2Y', 'gf_dom2Z','gAmp_CRXY', 'gAmp_CRXZ', 'gAmp_CRYZ', 'g_tcorr_XY', 'g_tcorr_XZ', 'g_tcorr_YZ'});
+
+%balanceamento de dados
 class_names = unique(c_012);
 PD_cases = sum(c_012==0);
 ES_cases = sum(c_012==1);
 DS_cases = sum(c_012==2);
+Dataset = [all_feat c_012];
 
+ %%% balanceamento dos dados por unersampling %%%
 Dataset_v2 = sort(Dataset);
 PD_Mat = Dataset_v2(1:PD_cases,:);
 ES_Mat = Dataset_v2(PD_cases+1:PD_cases+ES_cases,:);
@@ -43,34 +63,34 @@ PD_Mat(PD_perm(1:PD_cases-DS_cases),:) = [];
 ES_Mat(ES_perm(1:ES_cases-DS_cases),:) = [];
 all_feat = [PD_Mat; ES_Mat; DS_Mat];
 
-% training and test division
-
+%
+%% Divisão em treino em teste
+%aleatoridade dos dados
 s_feat = size(all_feat);
 numObs = length(all_feat);
-rng(10)
+rng(100)
 perm = randperm(numObs);
 for m = 1:s_feat(2)
     for i=1:numObs
-        all_feat_2(i,m) = all_feat(perm(i),m); %shuffling data for training and test division
+        all_feat_2(i,m) = all_feat(perm(i),m);
     end
 end
 
-TrainPart = floor(numObs*0.7); % 70% of the observations
-trn = all_feat_2(1:TrainPart,1:27); % training set
-tst = all_feat_2(TrainPart+1:end,1:27); % test set 
-trn_c = all_feat_2(1:TrainPart,28); % classes of training set
-tst_c = all_feat_2(TrainPart+1:end,28); % classes of test set
-
-% Feature selection using Principal Component Analysis (PCA)
+TrainPart = floor(numObs*0.7); % 70% das observações
+trn = all_feat_2(1:TrainPart,1:27); % Conjunto de Treinamento
+tst = all_feat_2(TrainPart+1:end,1:27); % Conjunto de Teste
+trn_c = all_feat_2(1:TrainPart,28); % Classes do conjunto de treinamento
+tst_c = all_feat_2(TrainPart+1:end,28); % Classes do conjunto de teste 
 
 
 %% PCA train
 
-% "all_feat_2" is the dataset where the rows are observations and columns are the features + classes of each observation 
+% "all_feat_2" é a base de dados, onde as linhas são as observações e as
+% colunas as características + classe de cada observação 
 fs = 20;
-[trn_lin trn_col] = size(trn(:,1:end)); %dimension of dataset only with features (training set) 
-trn_mean = mean(trn(:,1:end));%mean of feature vectors
-trn_no_mean = trn(:,1:end) - repmat(trn_mean,trn_lin,1); %dataset normalized to mean = 0
+[trn_lin trn_col] = size(trn(:,1:end)); %dimensão do base dados apenas com as características (treinamento)
+trn_mean = mean(trn(:,1:end));%média dos vetores de características
+trn_no_mean = trn(:,1:end) - repmat(trn_mean,trn_lin,1); %base de dados normalizada a uma média 0
 t_trn = [0:trn_lin-1]/fs;
 trn_norm = []
 for i = 1:trn_col
@@ -79,8 +99,8 @@ end
 trn_S = corr(trn_norm);
 [trn_e trn_lambda] = eig(trn_S);
 trn_lambda = diag(trn_lambda)
-trn_perc = (trn_lambda*100)/sum(trn_lambda); %making the proportion of the sum of eigenvalues turns to 100%
-trn_num = find(cumsum(trn_perc)>= 95); %choosing the components where the variance explained sums 95%  
+trn_perc = (trn_lambda*100)/sum(trn_lambda); %fazendo a proporção para que a soma dos autovalores dê 100% 
+trn_num = find(cumsum(trn_perc)>= 95); %pegando as componentes que possuem 95% da variância 
 trn_cp = trn_norm * trn_e;
 
 trn_corr_12 = corr(trn_cp(:,1),trn_cp(:,2))
@@ -89,9 +109,9 @@ trn_corr_13 = corr(trn_cp(:,1),trn_cp(:,3))
 %% PCA test
 
 fs = 20;
-[tst_lin tst_col] = size(tst(:,1:end)); %dimension of dataset only with features (testing set) 
-tst_mean = mean(tst(:,1:end));%mean of feature vectors
-tst_no_mean = tst(:,1:end) - repmat(tst_mean,tst_lin,1); %dataset normalized to mean = 0
+[tst_lin tst_col] = size(tst(:,1:end)); %dimensão do base dados apenas com as características (treinamento)
+tst_mean = mean(tst(:,1:end));%média dos vetores de características
+tst_no_mean = tst(:,1:end) - repmat(tst_mean,tst_lin,1); %base de dados normalizada a uma média 0
 t_tst = [0:tst_lin-1]/fs;
 tst_norm = []
 for i = 1:tst_col
@@ -100,8 +120,8 @@ end
 tst_S = corr(tst_norm);
 [tst_e tst_lambda] = eig(tst_S);
 tst_lambda = abs(diag(tst_lambda))
-%tst_perc = (tst_lambda*100)/sum(tst_lambda); %making the proportion of the sum of eigenvalues turns to 100% 
-%tst_num = find(cumsum(trn_perc)>= 95); %choosing the components where the variance explained sums 95%   
+%tst_perc = (tst_lambda*100)/sum(tst_lambda); %fazendo a proporção para que a soma dos autovalores dê 100% 
+%tst_num = find(cumsum(trn_perc)>= 95); %pegando as componentes que possuem 95% da variância 
 tst_cp = tst_norm * tst_e;
 
 tst_corr_12 = corr(tst_cp(:,1),tst_cp(:,2))
@@ -118,56 +138,21 @@ pscoreTest95 = tst_cp(:,1:trn_num); %observações de teste em componentes
 PCA_training = [pscoreTrain95 trn_c]; %observações de treinamento + classe de cada observação
 PCA_testing = [pscoreTest95 tst_c];%observações de teste + classe de cada observação
 
+%verificando se as componentes são correlacionadas
+corr_12_trn = corr(PCA_training(:,1),PCA_training(:,2))
+corr_23_trn = corr(PCA_training(:,2),PCA_training(:,3))
+corr_13_trn = corr(PCA_training(:,1),PCA_training(:,3))
 
- 
-all_sz = size(all_feat_2(:,1:end-1)); % dimension of feature dataset
-all_mean = mean(all_feat_2(:,1:end-1));% mean of features vectors
-all_no_mean = all_feat_2(:,1:end-1) - repmat(all_mean,all_sz(1),1); % features dataset normalized by mean = 0 
-
-vat = 0.95 %variance of 95%
-fs = 20 % sampling frequency 
-
-X = all_no_mean
-[l, c] = size(X) %dimention of matrix
-t = [0:l-1]/fs %time
-X1 = []
-for i = 1:c
-    X1(:,i) = X(:,i)/std(X(:,i));
-end
-X = X1;
-
-S = corr(X) % correlation matrix
-[e, lambda] = eig(S) % eigenvectors and eigenvalues
-lambda = diag(lambda); % main diagonal of eigenvalues 
-
-pca_perc = (lambda*100)/sum(lambda); % turning the sum of eigenvalues to 100% 
-pca_n = find(cumsum(pca_perc)>= 95); % choosing the components that explain 95% of variance
-
-%Generating principal components
-cp = X * e;
-pca_cp = [cp(:,1:pca_n) all_feat_2(:,28)]; 
-cv = cvpartition(size(pca_cp,1),'HoldOut',0.3);
-idx = cv.test;
-% division of training and test data
-PCA_training = pca_cp(~idx,:);
-PCA_testing  = pca_cp(idx,:);
-pscoreTraing95 = PCA_training(:,1:end-1)
-pscoreTraing95 = PCA_testing(:,1:end-1)
-
-
-%verifying if the correlation of the components is 0 (they should be)
-corr_12 = corr(cp(:,1),cp(:,2))
-corr_23 = corr(cp(:,2),cp(:,3))
-corr_13 = corr(cp(:,1),cp(:,3))
-
-%verifying if the dot product is 0 (they should be)
-dot_12 = dot(e(:,1),e(:,2)')
-dot_23 = dot(e(:,2),e(:,3)')
-dot_13 = dot(e(:,1),e(:,3)')
-
+corr_12_tst = corr(PCA_testing(:,1),PCA_testing(:,2))
+corr_23_tst = corr(PCA_testing(:,2),PCA_testing(:,3))
+corr_13_tst = corr(PCA_testing(:,1),PCA_testing(:,3))
 
 %% Decision Trees
+tic
+rng(10)
 dt = fitctree(pscoreTrain95,trn_c);
+elapsed_time_dt = toc
+%%
 rng(10)
 dt1 = fitctree(pscoreTrain95,trn_c,'MaxNumSplits',7,'CrossVal','on','Leaveout','on','PredictorNames',{'PC1','PC2','PC3'});
 view(dt1.Trained{1},'Mode','graph')
@@ -196,9 +181,8 @@ nb_fit = predict(nb,pscoreTest95);
 nb_CM = confusionmat(nb_fit,tst_c);
 nb_accu = sum(diag(nb_CM))/ sum(nb_CM(:));
 
-
 %% KNN
-knn = fitcknn(pscoreTrain95,trn_c,'NumNeighbors',7,'Distance','Mahalanobis');
+knn = fitcknn(pscoreTrain95,trn_c,'NumNeighbors',5,'Distance','Mahalanobis');
 
 %cvp = cvpartition(numObs,'LeaveOut')
 %cvError = crossval('mcr',trn,trn_c,'Predfun',@classf,'Partition',cv_k)
@@ -230,18 +214,16 @@ ylabel('accuracy')
 title('accuracy x k neighbours')
 
 
-%% Random Forest
+%% random forest 10 tentativa
+tic% meu código MATLAB elapsed_time = toc
+rng(10)
+rf1 = fitensemble(pscoreTrain95,trn_c,'AdaBoostM2',100,'Tree','PredictorNames',{'PC1','PC2','PC3'});
+elapsed_time_rf = toc
+%%
 
-rf1 = fitensemble(pscoreTrain95,trn_c,'AdaBoostM2',100,'Tree','PredictorNames',{'PC1','PC2','PC3'})
 rf2 = fitensemble(pscoreTrain95,trn_c,'AdaBoostM2',100,'Tree','CrossVal','on','Leaveout','on')
 rng(10)
-%{
-rf1_cv = crossval(rf1,'Leaveout','on');
-rf1_kloss = kfoldLoss(rf1);
-fr1_accu_cv = 1-rf1_kloss;
-[rf1_cvpred,rf1_cvscores] = kfoldPredict(rf1_cv);
-[rf1cv_CM, rf1cv_ordCM] = confusionmat(rf1_cvpred,trn_c);
-%}
+
 rf1_kloss = kfoldLoss(rf2);
 rf1_accu_cv = 1-rf1_kloss;
 [rf1_cvpred,rf1_cvscores] = kfoldPredict(rf2);
@@ -255,10 +237,8 @@ rf1_accu = sum(diag(rf1_CM))/ sum(rf1_CM(:));
 rng(10)
 view(rf1.Trained{1},'Mode','graph')
 view(rf1.Trained{6},'Mode','graph')
-%view(rf1.Trained{85},'Mode','graph')
 
 %% SVM
-%MATLAB Classification learner app was used to create the model MSVM setting all the particularities automatically (gaussian kernel function and one-vs-all method)
 SVM_rloss = MSVM.resubLoss;
 rng(10)
 SVM_cv = crossval(MSVM,'Leaveout','on');
@@ -271,7 +251,7 @@ SVM_CM = confusionmat(SVM_fit,tst_c);
 SVM_accu = sum(diag(SVM_CM))/ sum(SVM_CM(:));
 
 
-%% precision, recall, F1-Measure, accuracy and confusion matrix
+%% precision, recall, F1-Measure, acurácia, matriz de confusão
 
 knn_precision = sum(diag(knn_CM))/ (sum(diag(knn_CM))+knn_CM(1,2)+knn_CM(1,3)+knn_CM(2,3));
 dt_precision = sum(diag(dt_CM))/ (sum(diag(dt_CM))+dt_CM(1,2)+dt_CM(1,3)+dt_CM(2,3));
@@ -296,9 +276,6 @@ rf1_F1 = 2*rf1_precision*rf1_recall/(rf1_precision + rf1_recall);
 SVM_F1 = 2*SVM_precision*SVM_recall/(SVM_precision + SVM_recall);
 Comparison_F1 = [knn_F1 dt_F1 nb_F1 rf1_F1 SVM_F1];
 Compare_Table_F1 = array2table(Comparison_F1,'VariableNames',{'KNN','DT','NB','RF','SVM'},'RowNames',{'F1'})
-
-
-%comparing the machine learning techniques
 
 CV_Comparison = [knn_accu_cv dt_accu_cv nb_accu_cv rf1_accu_cv SVM_accu_cv];
 Comparison = [knn_accu dt_accu nb_accu rf1_accu SVM_accu];
