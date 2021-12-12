@@ -1,9 +1,0 @@
-Na pasta MAT_Files (IMU_Signals) tem todos os sinais (os 95)
-
-no programa V1_YostIMUcode_v0 os sinais são lidos, filtrados e calculadas as características
-
-no programa classificacao_v4_PCAMANUAL_V3 é criado o dataset com as observações nas linhas e as características nas colunas e feito todo o tratamento até o a comparação dos modelo. 
-
-OBS: O segundo algoritmo deve ser rodado uma vez. E depois o Modelo SVM tem que ser performado usando o classification learner app e exportado para o programa e depois deve ser executado de novo 
-
-Classification Learner App: Figura mostra o layout do app no matlab, na engrenagem é possivel setar as configuraçoes descritas no trabalho e em export model, escolher opção export model e colocar nome MSVM 
